@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>UPI Fraud Detection System</title>
+
+<!-- Google Font -->
+<link
+	href="https://fonts.googleapis.com/css2?family=Poppins&display=swap"
+	rel="stylesheet">
+
+<style>
+body {
+	font-family: 'Poppins', sans-serif;
+	background: #0f172a;
+	color: #e2e8f0;
+	margin: 0;
+	padding: 0;
+}
+
+.container {
+	width: 80%;
+	margin: auto;
+	padding: 20px;
+}
+
+h1 {
+	text-align: center;
+	color: #38bdf8;
+}
+
+.card {
+	background: #1e293b;
+	padding: 20px;
+	margin: 20px 0;
+	border-radius: 10px;
+	box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+textarea, input {
+	width: 100%;
+	padding: 10px;
+	border-radius: 5px;
+	border: none;
+	margin-top: 10px;
+	background: #334155;
+	color: white;
+}
+
+button {
+	margin-top: 10px;
+	padding: 10px 15px;
+	border: none;
+	border-radius: 5px;
+	background: #38bdf8;
+	color: black;
+	cursor: pointer;
+	font-weight: bold;
+}
+
+button:hover {
+	background: #0ea5e9;
+}
+
+.result-safe {
+	color: #22c55e;
+	font-weight: bold;
+}
+
+.result-fraud {
+	color: #ef4444;
+	font-weight: bold;
+}
+
+.buttons {
+	margin-top: 10px;
+}
+
+.buttons button {
+	margin-right: 10px;
+}
+</style>
+</head>
+
+<body>
+
+	<div class="container">
+
+		<h1>🔐 UPI Fraud Detection System</h1>
+
+		<!-- FRAUD CHECK -->
+		<div class="card">
+			<h2>💳 Transaction Fraud Check</h2>
+
+			<div class="buttons">
+				<button onclick="loadSample()">Use Sample</button>
+				<button onclick="generateRandom()">Random Data</button>
+			</div>
+
+			<textarea id="features" rows="4"
+				placeholder="Auto-filled or paste values..."></textarea>
+
+			<button onclick="checkFraud()">Check Transaction</button>
+
+			<h3 id="result"></h3>
+		</div>
+
+		<!-- URL CHECK -->
+		<div class="card">
+			<h2>🔗 UPI Link Checker</h2>
+
+			<input type="text" id="url" placeholder="Enter UPI link here">
+
+			<button onclick="checkUrl()">Check Link</button>
+
+			<h3 id="urlResult"></h3>
+		</div>
+
+	</div>
+
+	<script>
+
+// Sample data (replace with your real sample)
+const sampleData = [0.12, -1.45, 0.33, 0.5, 1.1, -0.9, 0.7, 0.2, -0.4, 1.5,
+                    0.6, -0.3, 0.8, -1.0, 0.4, 0.2, -0.6, 1.2, 0.3, -0.7,
+                    0.9, 0.1, -0.2, 0.5, 0.6, -0.8, 0.2, 0.1, -0.3, 0.4];
+
+function loadSample() {
+    document.getElementById("features").value = sampleData.join(",");
+}
+
+function generateRandom() {
+    let arr = [];
+    for (let i = 0; i < 30; i++) {
+        arr.push((Math.random() * 2 - 1).toFixed(4));
+    }
+    document.getElementById("features").value = arr.join(",");
+}
+
+function checkFraud() {
+    let input = document.getElementById("features").value;
+    let arr = input.split(",").map(Number);
+
+    if (arr.length !== 30) {
+        alert("Please enter exactly 30 values");
+        return;
+    }
+
+    fetch("/api/check", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            features: arr
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        let resultDiv = document.getElementById("result");
+
+        if (data.fraud === 1) {
+            resultDiv.innerHTML = "⚠️ FRAUD DETECTED (Probability: " + data.probability + ")";
+            resultDiv.className = "result-fraud";
+        } else {
+            resultDiv.innerHTML = "✅ SAFE TRANSACTION (Probability: " + data.probability + ")";
+            resultDiv.className = "result-safe";
+        }
+    });
+}
+
+function checkUrl() {
+    let url = document.getElementById("url").value;
+
+    fetch("/api/check-url", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            url: url
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        let result = document.getElementById("urlResult");
+
+        if (data.status === "Suspicious") {
+            result.innerHTML = "⚠️ Suspicious Link!";
+            result.className = "result-fraud";
+        } else {
+            result.innerHTML = "✅ Safe Link";
+            result.className = "result-safe";
+        }
+    });
+}
+
+</script>
+
+</body>
+</html>
